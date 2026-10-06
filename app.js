@@ -48,9 +48,6 @@
     return username;
   };
 
-  const initialsOf = (name) =>
-    String(name).trim().split(/\s+/).map((w) => w[0]).join("").toUpperCase().slice(0, 3);
-
   const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // "Aug 2024", "April 2022", "2017", "Present" -> Date (null if unparseable)
@@ -273,14 +270,7 @@
     mail.href = `mailto:${p.email}`;
     mail.textContent = "GET_IN_TOUCH";
 
-    // identity panel
-    const face = $("id-face");
-    if (p.photo) {
-      face.classList.add("has-photo");
-      face.style.backgroundImage = `url("${p.photo}")`;
-    } else {
-      face.textContent = initialsOf(p.name);
-    }
+    renderRadar();
 
     // current role, if any
     const now = (DATA.experience || []).find((e) => isPresent(e.endDate));
@@ -307,6 +297,40 @@
     $("id-org").textContent = edu
       ? (edu.institution.match(/\b[A-Z]/g) || []).join("").slice(0, 4) || "EDU"
       : "SEC";
+  }
+
+  // ---------------- identity panel: radar instead of a photo ----------------
+
+  const RADAR_PERIOD = 4;   // seconds per sweep — keep in sync with .radar-sweep in style.css
+  const FOCUS = ["SOC_AUTOMATION", "SOAR_PLAYBOOKS", "THREAT_INTEL", "DETECTION_ENG", "MOBILE_APPS"];
+
+  function renderRadar() {
+    // one blip per project, spread by the golden angle so they never bunch up
+    const n = Math.max(3, Math.min(12, (DATA.projects || []).length));
+    $("radar").insertAdjacentHTML("beforeend", Array.from({ length: n }, (_, i) => {
+      const deg = (i * 137.508 + 24) % 360;
+      const r = 14 + ((i * 23) % 30);   // % of the radar box, center is 50%
+      const rad = (deg * Math.PI) / 180;
+      const x = 50 + r * Math.sin(rad), y = 50 - r * Math.cos(rad);
+      // light up exactly when the sweep's leading edge passes this angle
+      return `<span class="blip" style="left:${x.toFixed(1)}%;top:${y.toFixed(1)}%;animation-delay:${((deg / 360) * RADAR_PERIOD).toFixed(2)}s"></span>`;
+    }).join(""));
+    // the sweep has been spinning since page load; restart it so it shares t=0 with the blips
+    const sweep = document.querySelector(".radar-sweep");
+    sweep.style.animation = "none";
+    void sweep.offsetWidth;
+    sweep.style.animation = "";
+
+    const el = $("id-focus");
+    if (reducedMotion()) { el.textContent = FOCUS[0]; return; }
+    // type each focus area out, hold, then move to the next
+    let i = 0;
+    const type = (word, k = 0) => {
+      el.textContent = word.slice(0, k);
+      if (k < word.length) return setTimeout(() => type(word, k + 1), 55);
+      setTimeout(() => type(FOCUS[++i % FOCUS.length]), 2200);
+    };
+    type(FOCUS[0]);
   }
 
   // ---------------- sections ----------------

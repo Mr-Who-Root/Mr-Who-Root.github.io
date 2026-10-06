@@ -459,40 +459,89 @@ body.nav-open .nav-burger span::after { transform: translateY(-6px) rotate(-45de
   padding: 5px 14px;
 }
 
-/* initials + photo fallback */
-.id-face {
+/* radar readout — deliberately no photo */
+.radar {
+  position: absolute;
+  left: 50%; top: 46%;
+  width: 72%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  background:
+    linear-gradient(rgba(0, 240, 255, 0.16), rgba(0, 240, 255, 0.16)) center / 1px 100% no-repeat,
+    linear-gradient(rgba(0, 240, 255, 0.16), rgba(0, 240, 255, 0.16)) center / 100% 1px no-repeat,
+    repeating-radial-gradient(circle, transparent 0 calc(25% - 1px), rgba(0, 240, 255, 0.16) calc(25% - 1px) 25%),
+    radial-gradient(circle, rgba(0, 240, 255, 0.07), transparent 70%);
+  box-shadow: 0 0 40px rgba(0, 240, 255, 0.08), inset 0 0 30px rgba(0, 240, 255, 0.06);
+  overflow: hidden;
+  z-index: 2;
+}
+.radar::after {   /* center pip */
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 6px; height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 10px var(--cyan);
+}
+/* leading edge at 0deg (12 o'clock), fading trail behind it */
+.radar-sweep {
   position: absolute;
   inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: clamp(4rem, 11vw, 7rem);
-  color: rgba(0, 240, 255, 0.16);
-  text-shadow: 0 0 30px rgba(0, 240, 255, 0.25);
-  letter-spacing: 0.04em;
-  background-size: cover;
-  background-position: center;
-  filter: grayscale(1) contrast(1.08);
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0deg 270deg, rgba(0, 240, 255, 0.04) 300deg, rgba(0, 240, 255, 0.38) 360deg);
+  animation: radarSweep 4s linear infinite;   /* RADAR_PERIOD in app.js */
 }
-.id-face.has-photo { color: transparent; text-shadow: none; }
+@keyframes radarSweep { to { transform: rotate(360deg); } }
 
-/* HUD detailing so the panel reads as a scanner readout when no photo is set */
+.blip {
+  position: absolute;
+  width: 7px; height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  background: var(--pink);
+  box-shadow: 0 0 10px var(--pink);
+  opacity: 0.12;
+  animation: blip 4s ease-out infinite;      /* RADAR_PERIOD in app.js */
+}
+.blip:nth-child(3n) { background: var(--yellow); box-shadow: 0 0 10px var(--yellow); }
+@keyframes blip {
+  0%   { opacity: 1; transform: scale(1.5); }
+  70%  { opacity: 0.12; transform: scale(1); }
+  100% { opacity: 0.12; transform: scale(1); }
+}
+
+.id-focus {
+  position: absolute;
+  left: 0; right: 0; bottom: 44px;
+  z-index: 4;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  color: var(--cyan);
+  white-space: nowrap;
+}
+.id-focus .if-k { color: var(--text-dim); }
+.if-caret {
+  display: inline-block;
+  width: 7px; height: 12px;
+  margin-left: 3px;
+  vertical-align: -1px;
+  background: var(--cyan);
+  animation: caret 1s steps(2, start) infinite;
+}
+@keyframes caret { to { visibility: hidden; } }
+
+/* HUD frame detailing */
 .id-panel::before {
   content: "";
   position: absolute;
   inset: 26px;
   border: 1px dashed rgba(0, 240, 255, 0.14);
-  pointer-events: none;
-  z-index: 1;
-}
-.id-panel::after {
-  content: "";
-  position: absolute;
-  top: 50%; left: 26px; right: 26px;
-  height: 1px;
-  background: rgba(0, 240, 255, 0.14);
   pointer-events: none;
   z-index: 1;
 }
@@ -513,19 +562,6 @@ body.nav-open .nav-burger span::after { transform: translateY(-6px) rotate(-45de
 }
 .id-meta b { color: var(--green); font-weight: 500; }
 
-.id-scan {
-  position: absolute;
-  left: 0; right: 0;
-  height: 90px;
-  z-index: 2;
-  background: linear-gradient(to bottom, transparent, rgba(0, 240, 255, 0.16), transparent);
-  animation: idScan 3.6s ease-in-out infinite;
-  pointer-events: none;
-}
-@keyframes idScan {
-  0%, 100% { top: -90px; }
-  50% { top: 100%; }
-}
 
 .id-org {
   position: absolute;
@@ -846,7 +882,8 @@ body.nav-open .nav-burger span::after { transform: translateY(-6px) rotate(-45de
 .reveal-fallback [data-reveal] { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) {
   [data-reveal] { opacity: 1; transform: none; transition: none; }
-  .id-scan, .led.green { animation: none; }
+  .radar-sweep, .blip, .if-caret, .led.green { animation: none; }
+  .blip { opacity: 0.8; }
   html { scroll-behavior: auto; }
 }
 

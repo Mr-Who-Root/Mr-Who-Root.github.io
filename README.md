@@ -24,7 +24,8 @@ Content mapping from `data.json`:
 | `projects`       | Field Ops cards + filter bar (SECURITY / AI / MOBILE tags are inferred from each project's text and technologies) |
 | `customSections` | Credentials cards sorted newest first (hackathons/awards show as achievements), and the hero ID badge |
 
-Set `personalInfo.photo` to an image URL and the ID panel uses it instead of your initials.
+The hero ID panel never shows a photo (`personalInfo.photo` is ignored): it shows a radar
+with one blip per project and a typed readout cycling through focus areas (`FOCUS` in `app.js`).
 
 ### Interaction details
 
@@ -32,7 +33,7 @@ Set `personalInfo.photo` to an image URL and the ID panel uses it instead of you
   shows a readout label. Set per element with `data-cursor="LABEL"`. Automatically disabled
   for touch devices (`pointer: fine`) and for `prefers-reduced-motion`.
 - **Accessibility** — `prefers-reduced-motion` skips the boot sequence, the name glitch, the
-  scan sweep, and reveal animations. If `IntersectionObserver` is missing or JS fails, all
+  radar sweep, and reveal animations. If `IntersectionObserver` is missing or JS fails, all
   content falls back to visible rather than staying blank.
 
 ## Run locally
