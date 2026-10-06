@@ -52,3 +52,7 @@ python3 -m http.server 8000
 3. Branch `main`, folder `/ (root)`. Save.
 
 To update content later, edit `data.json` and push — Pages serves it immediately.
+
+**When you change `app.js` or `style.css`, bump the `?v=` number on both in `index.html`.**
+Pages tells browsers to cache files for 10 minutes; without the bump a visitor can get the new
+`index.html` with their cached old `app.js`, which breaks the page until the cache expires.

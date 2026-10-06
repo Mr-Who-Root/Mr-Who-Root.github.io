@@ -586,14 +586,13 @@
 
   // ---------------- boot ----------------
 
+  // Each section renders independently: one failure (bad data, or a stale
+  // cached app.js meeting newer HTML) must not blank the rest of the page.
   function renderAll() {
-    renderHero();
-    renderAbout();
-    renderSkills();
-    renderProjects();
-    renderExperience();
-    renderCerts();
-    renderContact();
+    const steps = { renderHero, renderAbout, renderSkills, renderProjects, renderExperience, renderCerts, renderContact };
+    for (const [name, fn] of Object.entries(steps)) {
+      try { fn(); } catch (err) { console.error(`${name} failed:`, err); }
+    }
     setupReveal();
     setupActiveNav();
   }
@@ -602,13 +601,13 @@
   setupNav();
   setupHud();
 
-  fetch("data.json")
+  // no-cache = revalidate with the server, so data.json edits show up immediately
+  fetch("data.json", { cache: "no-cache" })
     .then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
     .then((data) => {
       DATA = data;
       runBoot(renderAll);
-    })
-    .catch((err) => {
+    }, (err) => {
       $("boot")?.classList.add("done");
       document.body.classList.remove("booting");
       document.documentElement.classList.add("reveal-fallback");
