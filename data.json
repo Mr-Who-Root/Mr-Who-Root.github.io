@@ -25,10 +25,19 @@
       "id": "exp-1",
       "company": "Activebytes Innovations",
       "position": "Senior Security Engineer",
-      "startDate": "Aug 2022",
+      "startDate": "Aug 2024",
       "endDate": "Present",
       "location": "UAE / Remote",
-      "description": "- Worked on FortiSOAR and created **50+** playbooks.\n- Developed a SOC solution that automatically detects alerts and performs the required investigations.\n- Developed a Hunter module for creating different attack scenarios and generating alerts when suspicious activity is detected.\n- Developed a Compliance module containing **5+** security standards along with their associated alerts.\n- Developed **SOAR** modules with capabilities such as scheduled execution, pre-built and custom playbooks to automate repetitive manual tasks like alert triage, IP blocking, and user suspension. The platform also integrates multiple security tools (*firewalls, EDR, SIEM*, etc.) into a centralized console, enabling unified data sharing and coordinated response actions.\n- Created **100+** Compliance alerts and **300+** SOAR connectors and playbooks for various security solutions.\n- Developed a Threat Intelligence (TI) platform with capabilities including Threat Monitoring, Vulnerability Watcher, EASM, and Custom TI Reporting modules.\n- Developed an **AI Agent** to assist with the implementation of different log sources and support Detection Engineering by reviewing and optimizing alert playbooks."
+      "description": "- Worked on FortiSOAR and created **100+** playbooks.\n- Design and deliver FortiSOAR automation, custom playbooks and integrations with EDR, NDR, firewalls, SIEMs and ticketing systems.\n- Developed **SOAR** modules with capabilities such as scheduled execution, pre-built and custom playbooks to automate repetitive manual tasks like alert triage, IP blocking, and user suspension. The platform also integrates multiple security tools (*firewalls, EDR, SIEM*, etc.) into a centralized console, enabling unified data sharing and coordinated response actions.\n- Created **100+** Compliance alerts and **300+** SOAR connectors and playbooks for various security solutions.\n- Developed a Threat Intelligence (TI) platform with capabilities including Threat Monitoring, Vulnerability Watcher, EASM, and Custom TI Reporting modules.\n- Developed an **AI Agent** to assist with the implementation of different log sources and support Detection Engineering by reviewing and optimizing alert playbooks.\n- Led a team in the back-end development and implementation phases of an in-house application.\n- Developed API gateway for product development in AWS.\n- Handled successful implementations of **Elasticsearch** and **Opensearch** clusters (Big-Data Search and Analytic Engine) for multiple clients in Dubai, Egypt and Kuwait.\n- Solid expertise in managing and administering **Linux**-based systems proficiently"
+    },
+    {
+      "id": "exp-1787843107122",
+      "company": "Activebytes Innovations",
+      "position": "Security Engineer",
+      "startDate": "Aug 2022",
+      "endDate": "Aug 2024",
+      "location": "UAE / Remote",
+      "description": "- Sucessfully implemented and developed security related use-cases in **FortiSOAR** to interact and integrate with security solutions On-Prem/Cloud solutions like Firewalls, Microsoft Defender, NDR solutions and IoT devices, Ticketing tools.\n- Solid expertise in managing and administering **Linux**-based systems proficiently.\n- Provisioned, configured, and managed Linux distributions across diverse virtualization platforms, including **VMware** vSphere/Workstation, **Proxmox** VE, and **Hypervisor**.\n- Worked with clients to integrate complex FortiSOAR Playbooks on request, which does EDR and NDR investigations and raise tickets if found True Positive. Detection playbooks include Malware detection, DDOS monitoring, Suspicious User Activity and so on.\n- Successfully implemented FortiSOAR and developed tailor made use cases for government entities in Qatar and Kuwait as per their requirements.\n- Developed a SOC solution that automatically detects alerts and performs the required investigations.\n- Developed a Hunter module for creating different attack scenarios and generating alerts when suspicious activity is detected.\n- Developed a Compliance module containing 5+ security standards along with their associated alerts.\n- Proficient in working with a variety of tools including **FortiSOAR**, **Elasticsearch**, and **OpenSearch**."
     },
     {
       "id": "exp-2",
@@ -37,7 +46,7 @@
       "startDate": "May 2022",
       "endDate": "Aug 2022",
       "location": "Remote",
-      "description": "-Implemented security controls to identify and mitigate potential threats.\n-Investigated and analyzed security incidents, and tracked down their source and scope.\n-Created more than 50 playbooks in Python for various alerts and their investigations.\n- Worked on Elasticsearch and Opensearch to search and ingest datas."
+      "description": "-Implemented security controls to identify and mitigate potential threats.\n-Investigated and analyzed security incidents, and tracked down their source and scope.\n-Created more than 50 playbooks in Python for various alerts and their investigations.\n- Worked on Elasticsearch and Opensearch to search and ingest datas.\n- Implemented FortiSOAR solutions for multiple clients, tailoring customized use cases to address their specific requirements across the Middle East region."
     }
   ],
   "education": [
@@ -56,17 +65,17 @@
     {
       "id": "skill-1",
       "category": "Languages",
-      "skills": "Python, JavaScript, SQL, HTML/CSS"
+      "skills": "Python, JavaScript, SQL, HTML/CSS, Kotlin"
     },
     {
       "id": "skill-2",
       "category": "Frameworks & Libraries",
-      "skills": "React, Next.js, Django, Fast API"
+      "skills": "React, Next.js, Django, Fast API, Flutter"
     },
     {
       "id": "skill-3",
       "category": "Tools & Infrastructure",
-      "skills": "Docker, AWS (S3/EC2), Elastic Search, FortiSOAR, Nmap, Burp Suite, Wireshark, Nuclei, Metasploit, Git, PostgreSQL, Redis, CI/CD (GitHub Actions), OpenSearch"
+      "skills": "Linux, FortiSOAR, Docker, AWS (S3/EC2), Elastic Search(ELK), Nmap, Burp Suite, Wireshark, Nuclei, Metasploit, Git, PostgreSQL, Redis, CI/CD (GitHub Actions), OpenSearch"
     }
   ],
   "projects": [
@@ -97,6 +106,41 @@
       "description": "Developed SOAR modules with scheduled execution, customizable playbooks, and multi-tool integration to automate security workflows, including alert triage, IP blocking, user suspension, and coordinated incident response.",
       "technologies": "Python, Django, React, Docker",
       "link": ""
+    },
+    {
+      "id": "proj-1787153004157",
+      "name": "BridgeWay",
+      "description": "Instant voice crisis triage for individuals in recovery paired with an AI Caregiver Co-Pilot.",
+      "technologies": "React, Python, Django, Gemini",
+      "link": ""
+    },
+    {
+      "id": "proj-1787153203521",
+      "name": "TeleVault",
+      "description": "TeleVault lets you back up, sync, and stream large files, documents, photos, and videos directly to your own Telegram account.",
+      "technologies": "Fultter, sqlite, Firebase, ADMob",
+      "link": ""
+    },
+    {
+      "id": "proj-1787153347246",
+      "name": "Complyet",
+      "description": "Its a multi-tenant web application designed to help organizations manage compliance assessments, audits, documentation, and risk management against various industry standards.",
+      "technologies": "React, Django, AWS Cognito, sqlite",
+      "link": ""
+    },
+    {
+      "id": "proj-1787154815655",
+      "name": "Expenso",
+      "description": "A money-tracking application which automatically read incoming SMS messages to detect Debit and Credit transactions. It will parse the text and save the details",
+      "technologies": "Fultter, sqlite, Firebase, ADMob",
+      "link": ""
+    },
+    {
+      "id": "proj-1788761734050",
+      "name": "Ripple",
+      "description": "It is a simple, visual habit tracker for daily habits that stick. Log a completion in one tap, keep your streak going, and see every routine on colorful cards, calendars, and heatmaps.",
+      "technologies": "Fultter, sqlite, Firebase, ADMob",
+      "link": ""
     }
   ],
   "customSections": [
@@ -119,6 +163,11 @@
       ],
       "items": [
         {
+          "id": "item-1787995483980",
+          "field_1783761580149": "FortiSOAR 7.6 Administrator, Fortinet",
+          "field_1783761586418": "Aug 2026"
+        },
+        {
           "id": "item-1783761521335",
           "field_1783761580149": "Certified Ethical Hacker (CEH), EC-Council",
           "field_1783761586418": "April 2022"
@@ -132,6 +181,11 @@
           "id": "item-1783761623124",
           "field_1783761580149": "Splunk 7.x Fundamentals Part 1 , Splunk",
           "field_1783761586418": "Oct 2021"
+        },
+        {
+          "id": "item-1787155014895",
+          "field_1783761580149": "Google Prompt war vibe-coding hackathon",
+          "field_1783761586418": "July 2026"
         }
       ]
     }

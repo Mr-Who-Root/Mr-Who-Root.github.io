@@ -51,6 +51,63 @@
   const initialsOf = (name) =>
     String(name).trim().split(/\s+/).map((w) => w[0]).join("").toUpperCase().slice(0, 3);
 
+  const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // "Aug 2024", "April 2022", "2017", "Present" -> Date (null if unparseable)
+  const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+  function parseDate(s) {
+    const str = String(s || "").trim().toLowerCase();
+    if (!str) return null;
+    if (/present|current|now/.test(str)) return new Date();
+    const year = (str.match(/\b(19|20)\d{2}\b/) || [])[0];
+    if (!year) return null;
+    const mi = MONTHS.findIndex((m) => str.includes(m));
+    return new Date(Number(year), mi < 0 ? 0 : mi, 1);
+  }
+
+  const isPresent = (s) => /present|current|now/i.test(String(s || ""));
+
+  // "2 yrs 2 mos" between two date strings
+  function durationOf(start, end) {
+    const a = parseDate(start), b = parseDate(end);
+    if (!a || !b) return "";
+    const months = Math.max(1, (b.getFullYear() - a.getFullYear()) * 12 + b.getMonth() - a.getMonth());
+    const y = Math.floor(months / 12), m = months % 12;
+    return [y ? `${y} yr${y > 1 ? "s" : ""}` : "", m ? `${m} mo${m > 1 ? "s" : ""}` : ""]
+      .filter(Boolean).join(" ");
+  }
+
+  // Projects carry no category field, so infer filter tags from their text.
+  const PROJECT_TAGS = [
+    ["SECURITY", /secur|soar|threat|\bsoc\b|complian|firewall|red\/blue|log management|incident|nmap|nuclei/i],
+    ["AI", /\bai\b|\bml\b|\brag\b|gemini|llm|machine learning/i],
+    ["MOBILE", /flutter|fultter|kotlin|android|ios|admob/i],
+  ];
+  const projectTags = (pr) => {
+    const hay = `${pr.name} ${pr.description} ${pr.technologies}`;
+    const tags = PROJECT_TAGS.filter(([, re]) => re.test(hay)).map(([t]) => t);
+    return tags.length ? tags : ["PLATFORM"];
+  };
+
+  // Flatten every custom section into { title, issuer, date, kind }, newest first.
+  function credentials() {
+    return (DATA.customSections || []).flatMap((section) => {
+      const fields = section.fields || [];
+      const titleF = fields.find((f) => f.type !== "date") || fields[0];
+      const dateF = fields.find((f) => f.type === "date");
+      return (section.items || []).map((item) => {
+        const raw = String(titleF ? item[titleF.name] ?? "" : "").trim();
+        // "Splunk 7.x Fundamentals Part 1 , Splunk" -> title + issuer
+        const cut = raw.lastIndexOf(",");
+        const title = (cut > 0 ? raw.slice(0, cut) : raw).trim();
+        const issuer = cut > 0 ? raw.slice(cut + 1).trim() : "";
+        const date = dateF ? String(item[dateF.name] ?? "") : "";
+        const kind = /hackathon|award|winner|finalist|competition/i.test(raw) ? "ACHIEVEMENT" : "CERTIFIED";
+        return { title, issuer, date, kind, t: parseDate(date)?.getTime() ?? 0 };
+      });
+    }).filter((c) => c.title).sort((a, b) => b.t - a.t);
+  }
+
   // ---------------- custom HUD cursor ----------------
   // Only for real pointing devices — touch users keep native behaviour.
 
@@ -113,8 +170,10 @@
     const fill = $("boot-fill");
     if (!boot || !log) return onDone();
 
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) { boot.classList.add("done"); document.body.classList.remove("booting"); return onDone(); }
+    // play once per browser session — reloads and back-navigation skip it
+    let seen = false;
+    try { seen = sessionStorage.getItem("cs-booted") === "1"; sessionStorage.setItem("cs-booted", "1"); } catch (_) {}
+    if (reducedMotion() || seen) { boot.classList.add("done"); document.body.classList.remove("booting"); return onDone(); }
 
     document.body.classList.add("booting");
 
@@ -191,7 +250,7 @@
       .join("");
 
     // periodic glitch burst
-    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (!reducedMotion()) {
       const glitch = () => {
         nameEl.classList.add("glitching");
         setTimeout(() => nameEl.classList.remove("glitching"), 430);
@@ -223,19 +282,24 @@
       face.textContent = initialsOf(p.name);
     }
 
-    const firstCert = (DATA.customSections || [])
-      .flatMap((s) => s.items.map((it) => {
-        const f = s.fields[0];
-        return f ? String(it[f.name] || "") : "";
-      }))
-      .filter(Boolean)[0];
-    // Prefer the acronym — "Certified Ethical Hacker (CEH), EC-Council" reads
-    // as "CEH", not a hard-truncated "CERTIFIED ETHICAL HACK".
+    // current role, if any
+    const now = (DATA.experience || []).find((e) => isPresent(e.endDate));
+    $("hero-now").innerHTML = now
+      ? `<i class="led green"></i><span class="hn-k">NOW</span> ${esc(now.position)} <span class="hn-at">@</span> ${esc(now.company)}`
+      : "";
+
+    // newest certification (achievements like hackathons don't count)
+    const latest = credentials().find((c) => c.kind === "CERTIFIED");
+    // Prefer the acronym — "Certified Ethical Hacker (CEH)" reads as "CEH";
+    // otherwise cut at a word boundary: "FortiSOAR 7.6 Administrator" -> "FORTISOAR 7.6".
     const certLabel = (() => {
-      if (!firstCert) return "OPERATOR";
-      const acronym = firstCert.match(/\(([A-Za-z]{2,8})\)/);
+      if (!latest) return "OPERATOR";
+      const acronym = latest.title.match(/\(([A-Za-z]{2,8})\)/);
       if (acronym) return acronym[1].toUpperCase();
-      return firstCert.split(/[(,]/)[0].trim().toUpperCase().slice(0, 20);
+      const words = latest.title.split(/[\s(]+/);
+      let out = words.shift();
+      for (const w of words) { if ((out + " " + w).length > 16) break; out += " " + w; }
+      return out.toUpperCase();
     })();
     $("id-badge").textContent = `${certLabel} // VALID`;
 
@@ -250,7 +314,7 @@
   function renderAbout() {
     const p = DATA.personalInfo;
     const years = (String(p.summary).match(/(\d+)\+?\s*years?/i) || [])[1];
-    const certs = (DATA.customSections || []).reduce((n, s) => n + (s.items?.length || 0), 0);
+    const certs = credentials().filter((c) => c.kind === "CERTIFIED").length;
 
     $("about-content").innerHTML = `
       <div class="about-text" data-reveal>
@@ -260,8 +324,8 @@
       <div class="stat-grid" data-reveal>
         ${[
           [years ? years + "+" : (DATA.experience || []).length, "YEARS_ACTIVE"],
-          [(DATA.projects || []).length, "OPERATIONS"],
-          [certs, "CREDENTIALS"],
+          [(DATA.projects || []).length, "PROJECTS"],
+          [certs, "CERTIFICATIONS"],
           ["300+", "INTEGRATIONS"],
         ].map(([n, l]) => `<div class="stat"><div class="stat-n">${esc(n)}</div><div class="stat-l">${l}</div></div>`).join("")}
       </div>
@@ -269,23 +333,41 @@
   }
 
   function renderSkills() {
-    $("skills-content").innerHTML = (DATA.skills || []).map((s) => `
-      <div class="skill-block" data-reveal>
-        <h3>// ${esc(s.category).toUpperCase()}</h3>
-        <div class="skill-tags">
-          ${String(s.skills).split(",").map((t) => t.trim()).filter(Boolean)
-            .map((t) => `<span class="tag" data-cursor="SKILL">${esc(t)}</span>`).join("")}
+    $("skills-content").innerHTML = (DATA.skills || []).map((s) => {
+      const tags = String(s.skills).split(",").map((t) => t.trim()).filter(Boolean);
+      return `
+        <div class="skill-block" data-reveal>
+          <h3>// ${esc(s.category).toUpperCase()} <span class="skill-n">[${String(tags.length).padStart(2, "0")}]</span></h3>
+          <div class="skill-tags">
+            ${tags.map((t) => `<span class="tag" data-cursor="SKILL">${esc(t)}</span>`).join("")}
+          </div>
         </div>
-      </div>
-    `).join("");
+      `;
+    }).join("");
   }
 
   function renderProjects() {
-    $("projects-content").innerHTML = (DATA.projects || []).map((pr, i) => {
+    const projects = (DATA.projects || []).map((pr) => ({ ...pr, tags: projectTags(pr) }));
+    const filters = ["ALL", ...["SECURITY", "AI", "MOBILE", "PLATFORM"]
+      .filter((t) => projects.some((p) => p.tags.includes(t)))];
+    const count = (f) => f === "ALL" ? projects.length : projects.filter((p) => p.tags.includes(f)).length;
+
+    const bar = filters.length > 2 ? `
+      <div class="proj-filter" role="group" aria-label="Filter projects" data-reveal>
+        ${filters.map((f, i) => `
+          <button type="button" class="pf${i === 0 ? " on" : ""}" data-filter="${f}" aria-pressed="${i === 0}" data-cursor="FILTER">
+            ${f}<span class="pf-n">${String(count(f)).padStart(2, "0")}</span>
+          </button>`).join("")}
+      </div>` : "";
+
+    const cards = projects.map((pr, i) => {
       const stack = String(pr.technologies || "").split(",").map((t) => t.trim()).filter(Boolean);
       return `
-        <article class="proj" data-reveal data-cursor="INSPECT">
-          <div class="proj-idx">OP_${String(i + 1).padStart(2, "0")}</div>
+        <article class="proj" data-reveal data-tags="${pr.tags.join(" ")}" data-cursor="INSPECT">
+          <div class="proj-top">
+            <span class="proj-idx">OP_${String(i + 1).padStart(2, "0")}</span>
+            <span class="proj-tags">${pr.tags.map((t) => `<span class="ptag ptag-${t.toLowerCase()}">${t}</span>`).join("")}</span>
+          </div>
           <h3 class="proj-name">${esc(pr.name)}</h3>
           <p class="proj-desc">${renderInline(pr.description)}</p>
           <div class="proj-stack">${stack.map((t) => `<span class="chip-sm">${esc(t)}</span>`).join("")}</div>
@@ -293,60 +375,123 @@
         </article>
       `;
     }).join("");
+
+    $("projects-content").innerHTML = `${bar}<div class="proj-grid">${cards}</div>`;
+
+    $("projects-content").addEventListener("click", (e) => {
+      const btn = e.target.closest(".pf");
+      if (!btn) return;
+      const f = btn.dataset.filter;
+      document.querySelectorAll(".pf").forEach((b) => {
+        b.classList.toggle("on", b === btn);
+        b.setAttribute("aria-pressed", String(b === btn));
+      });
+      document.querySelectorAll(".proj").forEach((card) => {
+        card.hidden = f !== "ALL" && !card.dataset.tags.split(" ").includes(f);
+      });
+    });
   }
 
+  const BULLETS_SHOWN = 4;
+
   function renderExperience() {
-    const exp = (DATA.experience || []).map((e) => `
-      <div class="exp" data-reveal>
-        <div class="exp-kind">// DEPLOYMENT</div>
-        <h3 class="exp-role">${esc(e.position)}</h3>
-        <div class="exp-org">${esc(e.company)}</div>
-        <div class="exp-meta">${esc(e.startDate)} &mdash; ${esc(e.endDate)} // ${esc(e.location)}</div>
-        ${renderBullets(e.description)}
-      </div>
-    `).join("");
+    // consecutive roles at the same company collapse into one group (promotions)
+    const groups = [];
+    for (const e of DATA.experience || []) {
+      const last = groups[groups.length - 1];
+      if (last && last.company.trim().toLowerCase() === String(e.company).trim().toLowerCase()) last.roles.push(e);
+      else groups.push({ company: e.company, roles: [e] });
+    }
+
+    // `company` is passed only for a standalone role; grouped roles share the group header
+    const role = (e, company) => {
+      const html = renderBullets(e.description);
+      // hide everything past the first few bullets behind a toggle
+      // (a single leftover bullet isn't worth a toggle)
+      const total = (html.match(/<li>/g) || []).length;
+      const keep = total > BULLETS_SHOWN + 1 ? BULLETS_SHOWN : total;
+      let n = 0;
+      const clipped = html.replace(/<li>/g, () => (++n > keep ? '<li class="more">' : "<li>"));
+      const extra = total - keep;
+      return `
+        <div class="role${isPresent(e.endDate) ? " role-now" : ""}">
+          <div class="role-head">
+            <h3 class="exp-role">${esc(e.position)}</h3>
+            ${isPresent(e.endDate) ? `<span class="badge-now"><i class="led green"></i>CURRENT</span>` : ""}
+          </div>
+          ${company ? `<div class="exp-org">${esc(company)}</div>` : ""}
+          <div class="exp-meta">
+            ${esc(e.startDate)} &mdash; ${esc(e.endDate)}
+            <span class="dur">// ${durationOf(e.startDate, e.endDate)}</span>
+            ${company ? `<span class="loc">// ${esc(e.location)}</span>` : ""}
+          </div>
+          <div class="role-body">${clipped}</div>
+          ${extra ? `<button type="button" class="exp-more" aria-expanded="false" data-cursor="EXPAND" data-n="${extra}">+ ${extra} MORE</button>` : ""}
+        </div>
+      `;
+    };
+
+    const exp = groups.map((g) => {
+      const multi = g.roles.length > 1;
+      const first = g.roles[g.roles.length - 1], latest = g.roles[0];
+      return `
+        <div class="exp" data-reveal>
+          <div class="exp-kind">// DEPLOYMENT${multi ? ` <span class="promo">&#9650; ${g.roles.length - 1 > 1 ? g.roles.length - 1 + " PROMOTIONS" : "PROMOTED"}</span>` : ""}</div>
+          ${multi ? `
+            <div class="exp-org exp-org-lg">${esc(g.company)}</div>
+            <div class="exp-meta">${esc(first.startDate)} &mdash; ${esc(latest.endDate)}
+              <span class="dur">// ${durationOf(first.startDate, latest.endDate)}</span>
+              <span class="loc">// ${esc(latest.location)}</span></div>
+            <div class="roles">${g.roles.map((r) => role(r)).join("")}</div>
+          ` : role(latest, g.company)}
+        </div>
+      `;
+    }).join("");
 
     const edu = (DATA.education || []).map((e) => `
       <div class="exp" data-reveal>
         <div class="exp-kind">// TRAINING</div>
         <h3 class="exp-role">${esc(e.degree)}${e.fieldOfStudy ? " &mdash; " + esc(e.fieldOfStudy) : ""}</h3>
         <div class="exp-org">${esc(e.institution)}</div>
-        <div class="exp-meta">${esc(e.startDate)} &mdash; ${esc(e.endDate)} // ${esc(e.location)}</div>
+        <div class="exp-meta">${esc(e.startDate)} &mdash; ${esc(e.endDate)} <span class="loc">// ${esc(e.location)}</span></div>
         ${e.description ? `<p>${renderInline(e.description)}</p>` : ""}
       </div>
     `).join("");
 
-    $("experience-content").innerHTML = exp + edu;
+    const wrap = $("experience-content");
+    wrap.innerHTML = exp + edu;
+    wrap.addEventListener("click", (e) => {
+      const btn = e.target.closest(".exp-more");
+      if (!btn) return;
+      const r = btn.closest(".role");
+      const open = r.classList.toggle("open");
+      btn.setAttribute("aria-expanded", String(open));
+      btn.textContent = open ? "- COLLAPSE" : `+ ${btn.dataset.n} MORE`;
+    });
   }
 
   function renderCerts() {
-    $("certs-content").innerHTML = (DATA.customSections || []).flatMap((section) =>
-      section.items.map((item) => {
-        const [first, ...rest] = section.fields;
-        const name = first ? esc(item[first.name] ?? "") : "";
-        const meta = rest.map((f) => esc(item[f.name] ?? "")).filter(Boolean).join(" // ");
-        return `
-          <div class="cert" data-reveal data-cursor="VERIFY">
-            <div class="cert-valid">&#9679; VERIFIED</div>
-            <div class="cert-name">${name}</div>
-            <div class="cert-date">${meta}</div>
-          </div>
-        `;
-      })
-    ).join("");
+    $("certs-content").innerHTML = credentials().map((c) => `
+      <div class="cert${c.kind === "ACHIEVEMENT" ? " cert-ach" : ""}" data-reveal data-cursor="${c.kind === "ACHIEVEMENT" ? "AWARD" : "VERIFY"}">
+        <div class="cert-valid">${c.kind === "ACHIEVEMENT" ? "&#9733; ACHIEVEMENT" : "&#9679; CERTIFIED"}</div>
+        <div class="cert-name">${esc(c.title)}</div>
+        <div class="cert-date">${[c.issuer, c.date].filter(Boolean).map(esc).join(" // ")}</div>
+      </div>
+    `).join("");
   }
 
   function renderContact() {
     const p = DATA.personalInfo;
+    // phone is intentionally never rendered, even though data.json carries it
     const rows = [
-      ["EMAIL", `<a href="mailto:${esc(p.email)}" data-cursor="MAIL">${esc(p.email)}</a>`],
-      p.phone ? ["PHONE", `<a href="tel:${esc(p.phone)}" data-cursor="CALL">${esc(p.phone)}</a>`] : null,
+      ["EMAIL", `<a href="mailto:${esc(p.email)}" data-cursor="MAIL">${esc(p.email)}</a>
+                 <button type="button" class="copy" data-copy="${esc(p.email)}" data-cursor="COPY">COPY</button>`],
       ["LOCATION", esc(p.location)],
       ...(p.socialLinks || []).map((s) => {
         const url = socialUrl(s.platform, s.username);
-        return [String(s.platform).toUpperCase(), `<a href="${esc(url)}" target="_blank" rel="noopener" data-cursor="OPEN">${esc(url)}</a>`];
+        return [String(s.platform).toUpperCase(), `<a href="${esc(url)}" target="_blank" rel="noopener" data-cursor="OPEN">${esc(url.replace(/^https?:\/\//, ""))}</a>`];
       }),
-    ].filter(Boolean);
+    ];
 
     $("contact-content").innerHTML = `
       <div data-reveal>
@@ -356,11 +501,22 @@
           &gt; and detection engineering work.<br/>
           &gt; Response time: &lt; 24h
         </p>
+        <a href="mailto:${esc(p.email)}" class="btn btn-pink" data-cursor="EXEC">SEND_MESSAGE</a>
       </div>
       <div class="contact-rows" data-reveal>
         ${rows.map(([k, v]) => `<div class="crow"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("")}
       </div>
     `;
+
+    $("site-foot").innerHTML =
+      `&copy; ${new Date().getFullYear()} ${esc(p.name)} <span class="sf-sep">//</span> ${esc(p.title)}`;
+
+    $("contact-content").addEventListener("click", (e) => {
+      const btn = e.target.closest(".copy");
+      if (!btn) return;
+      const done = () => { btn.textContent = "COPIED"; setTimeout(() => (btn.textContent = "COPY"), 1600); };
+      if (navigator.clipboard?.writeText) navigator.clipboard.writeText(btn.dataset.copy).then(done, () => {});
+    });
   }
 
   // ---------------- scroll behaviours ----------------

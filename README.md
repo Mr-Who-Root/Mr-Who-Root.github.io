@@ -17,12 +17,12 @@ Content mapping from `data.json`:
 
 | `data.json`      | Where it appears                                            |
 | ---------------- | ----------------------------------------------------------- |
-| `personalInfo`   | hero name/chip/tagline, ID panel, About, Contact             |
-| `experience`     | Service Record timeline (`// DEPLOYMENT`)                    |
+| `personalInfo`   | hero name/chip/tagline, ID panel, About, Contact (`phone` is never shown) |
+| `experience`     | Service Record timeline (`// DEPLOYMENT`); consecutive roles at the same company are grouped as promotions, `"Present"` marks the current role |
 | `education`      | Service Record timeline (`// TRAINING`), ID panel org badge  |
 | `skills`         | Combat Skills tag groups                                     |
-| `projects`       | Field Ops cards                                              |
-| `customSections` | Credentials cards, and the hero ID badge (acronym + `VALID`) |
+| `projects`       | Field Ops cards + filter bar (SECURITY / AI / MOBILE tags are inferred from each project's text and technologies) |
+| `customSections` | Credentials cards sorted newest first (hackathons/awards show as achievements), and the hero ID badge |
 
 Set `personalInfo.photo` to an image URL and the ID panel uses it instead of your initials.
 
